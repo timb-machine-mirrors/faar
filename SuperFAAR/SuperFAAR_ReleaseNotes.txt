@@ -1,0 +1,519 @@
+#! /usr/bin/perl -w
+
+#---------------------------------------------------------------------------------------------------
+#  360-SUPERFAAR          Firewall Analysis, Audit, and Repair          This version is SUPER DUPER 
+#---------------------------------------------------------------------------------------------------
+
+#          ________   _______________           ________________      _____ __________ 
+#          \_____  \ /  _____/\   _  \          \_   _____/  _  \    /  _  \\______   \
+#            _(__  </   __  \ /  /_\  \   ______ |    __)/  /_\  \  /  /_\  \|       _/
+#           /       \  |__\  \\  \_/   \ /_____/ |     \/    |    \/    |    \    |   \
+#          /______  /\_____  / \_____  /         \___  /\____|__  /\____|__  /____|_  /
+#                 \/       \/        \/              \/         \/         \/       \/ 
+#			               - SUPERFAAR -
+
+#---------------------------------------------------------------------------------------------------
+# The purpose of this script is to analyze a firewalls configuration by combining logs and config
+#---------------------------------------------------------------------------------------------------
+# This script is hopefully written in a way that will make it understandable to firewall engineers
+#---------------------------------------------------------------------------------------------------
+
+
+
+#===================================================================================================
+#---------------------------------------------------------------------------------------------------
+# INPUT AND OUTPUT FILE TYPES
+#---------------------------------------------------------------------------------------------------
+#===================================================================================================
+
+
+
+#---------------------------------------------------------------------------------------------------
+# Currently supported input and output firewall config types are:
+#---------------------------------------------------------------------------------------------------
+#		  - Cisco ASA: show run
+#		  - Netscreen ScreenOS 6: get config
+#		  - Checkpoint Firewall-1: odumper/ofiller csv format in, fwdoc nats in, dbedit out
+#		  - Many similar typed configs can be "cat'ed" together for comparison via 'print' 
+#		    modes or by uncommenting the Data::Dumper output lines after each section.
+
+#---------------------------------------------------------------------------------------------------
+# Currently supported input firewall log types are:
+#---------------------------------------------------------------------------------------------------
+#		  - Cisco ASA: syslog text log
+#		  - Netscreen ScreenOS 6: syslog text log
+#		  - Checkpoint Firewall-1: logexport utility format, 
+#		  - Many log files can be "cat'ed" together.  In line log headers and prefixes are 
+#		    recognised so as to make processing log files with 'cat' line noise possible
+
+
+
+#===================================================================================================
+#---------------------------------------------------------------------------------------------------
+# HOW TO PURCHASE A LICENSE FOR THIS SOFTWARE
+#---------------------------------------------------------------------------------------------------
+#===================================================================================================
+
+
+#---------------------------------------------------------------------------------------------------
+# The latest version of this code can be ordered via https://www.360-faar.com/contact 
+# or by contacting dan@360-faar.com and requesting to purchase a license for use.
+#---------------------------------------------------------------------------------------------------
+
+
+
+#===================================================================================================
+#---------------------------------------------------------------------------------------------------
+# 360-SUPERFAAR RELEASES
+#---------------------------------------------------------------------------------------------------
+#===================================================================================================
+
+
+
+#---------------------------------------------------------------------------------------------------
+#  Release Notes:
+#---------------------------------------------------------------------------------------------------
+
+#  SUPER  v1.0.23 - This release adds the following features:
+#    27/01/2016   - Complexity counts for processed rules that are set not to log are no longer 
+#    		    counted twice by the filter subs.
+#    		  - The rashruleprintbase hash has been removed from the rule builder subs and the
+#    		    processed objects are now listed internally such that spaces are now allowed in 
+#    		    their names and are output correctly.  The ';' (semicolon)character is no longer
+#    		    allowed in names and should be removed before processing any configs with this
+#    		    character in their named objects or groups.
+#    		  - A version number has been added to the initial banner so that you can check 
+#    		    which version you are running before processing all the configs has completed.
+
+#  SUPER  v1.0.22 - This release adds the following features:
+#    25/11/2015   - Updated the configuration bundle building subs so that information about port
+#    		    and IP metadata building issues / anomalies is reported as PRTINFO or just INFO 
+#    		    instead of WARNING as before.  The coloured output has been updated to reflect 
+#    		    the info status of the messages (not red anymore).
+#    		    The cisco config parser now reads cisco ASA configs with spaces at the start of
+#    		    the lines, as does the Netscreen ScreenOS parser.
+
+#  SUPER  v1.0.21 - This release adds the following features:
+#    25/11/2015   - rr_mode includes new a variable to set the minimum CIDR length of the object matched
+#    		    in resolve "Any" objects mode before a new object is created.
+#    		    New objects are created if there are no firewall objects with longer CIDR lengths
+#    		    than the minimum length set, and there is a matching policy.
+#    		    This option allows the user to make a rulebase more speciffic if required.
+#    		    For example, setting a minimum CIDR length of 9 causes new objects to be created
+#    		    for policies using CIDR /8 (eg: 10.0.0.0/8) which are then expanded out to existing 
+#    		    objects that are CIDR /9 or longer or to create new objects of the chosen CIDR length
+#    		    that are used in the generated policy for IPs that do not match an existing objects.
+#    		  - This release also updates the depreciated shellwords to Text::ParseWords module
+
+#  SUPER  v1.0.20 - This release adds the following features:
+#    07/11/2015   - Chagnged warnings for unknown objects that are unwrapped from selected policies
+#    		    in rr_mode.
+#    		  - Fixed bug that caused a perl warning when no 'dest' policy is chosen in rr_mode.
+
+#  SUPER  v1.0.19 - This release adds the following features:
+#    28/10/2015   - Added 'dots' commandline argument.  Using 'dots=no' on the command line significantly
+#    		    reduces the number of times that dots are printed while processing.
+#    		  - ICMP inbound / outbound and teardown messages are checked for directionality using
+#    		    the source and destination ports as well as inbound and outbound tags.
+#    		    Inbound and outbound designations are defined by the firewall based on the external
+#    		    interface definition.  This means that the directionality of the connection cannot
+#    		    be garenteed for any of the messages.  This relase checks that the destination port
+#    		    is smaller than the source port and if not swaps the vaules for source and dest.
+#    		  - Added fucntionality so that when using the same source config as the destination
+#    		    config, any new objects created during rr_mode 'cres' filtering and added to the 
+#    		    config bundle, are recognised as newly translated and listed as such in the 
+#    		    tramslation output. The newly created objects are output to the config file.
+#    		  - Added cleanup at end of rr_mode to update the source configs 'iplengths' to include 
+#    		    the length of the newly created objects binary ips.
+
+#  SUPER  v1.0.18 - This release adds the following features:
+#    24/09/2015   - Fixed bug in cisco reader for unknown service object parser in service groups, 
+#    		    unknown services are now added as proto type 'portunknown'.
+#    		  - Added a second output stage for 'med' verbosity output in 'rr' mode. Whole rules
+#    		    that are filtered out are now displayed after the initial filtering, and again
+#    		    after filtering with the logs and complex mode rationalization. The second stage
+#    		    only outputs rules filtered out that were not already filtered before comparison
+#    		    to the binary logfiles. Also more information on reasons for filtering is output.
+#    		  - Updated cisco output writer so that unknown services used in rules are only output
+#    		    as service definitions once in the course of writing a policy to file.
+
+#  SUPER  v1.0.17 - This release adds the following features:
+#    16/09/2015   - Bug fix for Cisco access-list dynamic rule group output writer now handles unknown
+#    		    service objects correctly and writes service definitions for unknown services when 
+#    		    enough information is available to do so.
+
+#  SUPER  v1.0.16 - This release adds the following features:
+#    13/09/2015   - Cisco access-list output writer now handles nested group output in its general logic.
+#    		  - The access-list writer is updated and includes the option to dynamically 
+#    		    create groups for rules with large numbers of objects in either the source,
+#    		    destination or service positions, this can dramatically reduce rulebase sizes.
+#    		  - Added: is_netgroup_name and is_srvcgroup_name subs.
+
+#  SUPER  v1.0.15 - This release adds the following features:
+#    09/09/2015   - Cisco access-list output write bug fix for unknown services in numeric form.
+#		  - Changed unknown output service object warning.
+
+#  SUPER  v1.0.14 - This release adds the following features:
+#    29/08/2015   - Cisco access-list input parser bug fix for known services in numeric form.
+#    		    (represented by port number in access list 'eq ' type statements).
+#    		  - Cisco access-list output rulebase writer sub updates so that numeric services
+#    		    are represented with 'eq' statements in the acls.
+#    		  - Updated cisco input parser to include scrneg service information correctly.
+#    		  - Cisco access-list output rulebase writer sub to translate 'any' ip objects to proto 'ip'
+
+#  SUPER  v1.0.13 - This release adds the following features:
+#    24/08/2015	  - Cisco log entries for multiple connections with tag: %ASA-6-106100 are now parsed.
+#
+
+#  SUPER  v1.0.12 - This release adds the following features:
+#  		  - The Cisco service group parser now reads services and proto/ports defined within the service group
+#  		    in the format "service-oject <proto> source|destination <operator> <identifier>"
+
+#  SUPER  v1.0.11 - This release adds the following features:
+#  		  - The 'med' verbosity setting in 'rr' mode now outputs rules that were excluded from processing and
+#  		    rules that were filtered out of the policy because of matching 'filter' or 'destination' rule group 
+#  		    policy entries or exclusion CIDR, service or text filters.
+
+#  SUPER   v1.0.0 - This release adds the following features:
+#		  - Complex and Complexn rulebuild modes have been added to retain important rulebase structure.
+#		  - Drop, Reject and Encrypt rules are how handles by output writer subs, so that existing rulebases can be
+#		    translated using 'bldobjs' mode and complex /complexn rule build modes.
+#		  - Proto and Port filters have been added to 'rr' mode and can be used in conjunction with the existing filters.
+#		  - Added build net and srvc fast match bins / ports and groups subroutines.
+#		  - Added match objects between configs sub routines using normal and fast ports.
+#		  - Added database connectivity check subroutines to user modes so that configs are stored and retrieved as needed.
+#		  - Added mongodb and mongofiles sub routines to store and retrieve processed firewall configs datastructures.
+#		  - Reduced memory usage by only recalling the required configs from db when they are needed.
+#		  - Added checks to the user mode subs to prevent corrupt configs being loaded and crashing the script.
+#		  - Changed networkgroups and servicegroups memory structures to list only sub and super groups
+#		  - Added rule build using largest and smallest group options.
+#		  - Refactored the check rules and objects code (used after config build rule processing) into subroutines.
+#		  - Added many new 'modes' to load, write, list and update configurations in memory and database.
+#		  - Added 'fuzzy' largest and smallest group match to 'rr' mode.
+#		  - Added 'Match Only Most Specific CIDR IP Hits' option to 'rr' mode.
+#		  - Updated 'print' modes to retrieve configs from database if required and also to only output selected configs.
+#		  - Updated log readers to read many log files recursively and store each of these into mongo ** in progress
+#		  - Updated print modes to filter using proto and port.
+#		  - This enhanced version uses the modules: File::Find::Rule, FileHandle, MongoDB, MongoDB::GridFS, 
+#		    MongoDB::GridFS::File, MongoDB::Database, MongoDB::OID, JSON, JSON::Parse 'parse_json’.
+#		  - Removed many unused data structures 
+#		  - Updated 360-FAAR Enhanced menu to include the new options and shorter descriptions.
+#		  - Updated ‘print’ modes to use the new data structures networkgroups and networkservices
+#		  - Updated short help with the new options that are available at startup (data=x and cliet=x).
+#		  - Updated text output from the user mode subs so as to make it more undstandable.
+#		  - Removed unused ‘from.or' option in ‘rr’.
+#		  - Added 'Keep ALL DROP RULES' option to 'rr' mode, to retain drop rules over rulegroup boundies.
+#		  - Added 'Keep DROP ALL RULES' option to 'rr' mode
+#		  - Upgraded Log readers to find and read many files and split the saved binary log into smaller peices.
+#		  - Fixed $action and $date warnings when reading badly formated checkpoint logexported logs.
+#		  - 'rr' mode when connected to a db in 'client' mode now pulls binary logs in small sectinos to ensure
+#		    efficient memory usage when processing rulebases using stored log information.
+#		  - Added Digest::MD5 for log name storage because the log long log file names fail to be retrieved by mongo.
+#		  - Added srvc_inex_input sub for input of include and exclude proto and port / service filtering arrays.
+#		  - Added 'client' and 'db' options for connectivty and storage to MongoDB. 
+#		  - Fixed bug in odumer 'member' object output to CSV.
+#		  - Fixed service undefined bug in cisco config reader sub
+#		  - Fixed bugs in build_binaryips with bad member and interface definitions.
+#		  - Fixed bugs with access-list remark reader in read_cisco sub
+#		  - Added default rulebase header name for use if no rulebase name is given. Default name: 'Unnamed Rulebase'
+#		  - Fixed bug with ICMP echo-reply (the port = 0, which evaluates to false if you dont use the 'defined' word).
+#		  - Added 'med' verbosity level. the default 'no' verbosity no longer outputs original and filtered rules.
+#		  - Added cidr_include_exclude sub and updated all 'modes' with it.
+#		  - Added option_in_out sub and updated all 'modes' with it.
+#		  - Added checks for source, dest and service objects in read_od configs sub to catch empty fields, as per
+#		    ofiller format CSV's. Old 360-FAAR output can be now correctly read without editing the CSV.
+#		  - Added input and out subs for files, strings, multipe choice options, and replaced all input and output code 
+#		    in the 'mode' subs with these new subs.
+#		  - Changed the order of subroutines to make more sense in the context of the programs flow.
+#		  - Updated portgroups builder sub so that the groups use the srvcexceptions ports for large port groups instead
+#		    of adding all proto/port matches.  This speeds up rule building significantly for policies with large 
+#		    numbers of groups that include large port ranges.
+#		  - Upgraded rule net object and service ungrouper subs to make objects unique per rule.
+#		  - Added 'batch' mode cmd line option. Batch mode will only function if superfaar is connected to a database.
+#		    While running in batch mode the script will clear its local memory after uploading each config to the db.
+#		    After all configs are processed batch mode prints a report of the configs that were loaded to the db.
+#		    Once all loaded configs are reported the script exits without running the userloop.
+#		  - Fixed bug: uninitialised action, vpn and type for rules in ns with encryption_tunnel_id_needed action
+#		  - Fixed bug: in cisco group objects so "network-object host <IP>" ips are now added correctly with name "Host_<IP>".
+#		  - Fixed bug: in cisco group objects so "network-object <IP> <NM>" nets are now added correctly with name "Net_<IP>-<NM>".
+#		  - Fixed bug: in cisco group objects so 'group-object' subgroups are now added correctly to groups
+#		  - Fixed bug: in Microsoft MongoDB write configs to db. Config names entered into mongo have restricted 
+#		  - Fixed bug: in copylog and mergelog modes. Both of these modes now do what they say they do.
+#		    characters removed from their names on insert to the db.
+#		  - Added: Cisco service group objects using 'service-object' definition are now added correctly to groups
+#		  - Added: Cisco service 'icmp-type' groups are now added correctly.
+#		  - Added cisco 'any4' object: to represent all IPv4 addresses in modern cisco IPv4/v6 firewalls.
+#		  - Added: create new objects for unknown nets seen in the logs and use in place of the "Any" object in rules 
+#		  - Optimized rule processing so that rule objects are only ungrouped and read into arrays once.
+#		  - Optimized rule processing so that only known bit lengths are checked and useless chops are discuarded
+#		  - Optimized rule processing so that the filter section returns straight away if a match is to be filtered out.
+#		  - Optimized rule processing so that the filter sections are much more reliable and have many more optinos
+#		  - Optimized log to rule processing so that only known bit lengths are checked and useless chops are discuarded
+#		  - Optimized log to rule processing so that only the longest CIDR matches are added to the rule build hashes.
+#		  - Optimized rule build processing so that only groups smaller than the list of objects are compared to the object list.
+#		  - Added new ip, service, netgroup and service group translation stages to 'rr' mode and 'bldobj' modes
+#		  - Added service object translation proto/port matches to filter and merge-to rulebases for better matching
+#		    between firewall types with different service definitions.
+#		  - Added new multinet object to group translations for use when translating to firewalls that dont support multi ip objs
+#		  - Rewrote/cleanedup odumper reader and writer to support zones and spoofgroups as well as all netobject types I could find.
+#		  - Fixed bug in odumper reader: objects listed after their interfaces are now correctly read.
+#		  - Upgraded 'hit count' handling in all rule processing modes as well as simplifying the code.
+#		  - Cleaned up variables in log to rule and rule processing subs code
+#		  - Optimized log processing for service ports and tuned the data filtration while building binlogs
+#		  - Changed the output formating and colour of 'rr' mode STDOUT text to include good info in section headers.
+#		  - Found bug: writing configs to mongo fails if the config has had other configs logs merged to it.
+#		    This means that the mergelog and copylog modes only work during the current session and that write mode
+#		    can only be used on locally loaded configs that have not had logs merged to them from other configs with
+#		    logs stored in mongodb.  Logs merged from local mem can be written without an problem.
+
+
+
+#===================================================================================================
+#---------------------------------------------------------------------------------------------------
+# 360-FAAR BETA RELEASES
+#---------------------------------------------------------------------------------------------------
+#===================================================================================================
+
+
+
+#---------------------------------------------------------------------------------------------------
+# BETA Release Notes:
+#---------------------------------------------------------------------------------------------------
+
+# Version v0.4.6  - This release correctly translates output netscreen group names in comment lines and comments are output last.
+#		  - Empty groups are not matched in build_rules subs - should be irrevelavant, but just incase.
+#		  - Rule comments are output in 'set name' statements in policy id mode for netscreen rulebases.
+#		  - Netscreen rules 'name' strings are added with rule descriptions and net ranges are translated as ranges.
+#		  - Netscreen and checkpoint default services have been updated with a few new services definitions.
+#		  - 'rr' mode 'nat' defaults added - the same as 'yes' defaults with CIDR filter NAT translations switched on.
+# Version v0.4.5  - This release fixes rulebase output bugs when using the 'cl' option in 'rr' mode.
+#		  - Netscreen rulebase numbers now otput usable rule numbers in 'cl' rulebases.
+#		  - Also, hopefully the ctrl-c panic when reading logs is fixed.
+#		  - 'rr' mode 'log' defaults now switch off 'Any' rule to object and service object resolution. 
+#		  - 'rr' mode 'res' defaults now switch on most resolution and matching options.
+# Version v0.4.4  - This release adds the "resolve services from 'Any' objects" option to the 'rr' mode.
+#		    This new 'rr' mode option requires that a log file is loaded and that the output policy is filtered using it.
+#		    When connectivity is found in the logs that matches a policy instance with the 'Any' service specified, the 
+#		    proto and port from the logs are used in the output policy and resolved objects are not added to the source 
+#		    config bundles but are reported during the rule build stages and should be added manually.
+#		  - Unknown service definitions are not output but are used in rules - cisco output uses unknown-proto in rules.
+#		  - Also, this release adds the "resolve 'Any' network objects to known nets" option to thr 'rr' mode.
+#		    This new 'rr' mode 'log' default resolves binary objects from the logs using all existing network objects
+#		    from the "merge from" config bundle, and uses them in the new policy.
+# Version v0.4.3  - This release adds the 'hc' option to build rules in 'rr' mode and arrange the most hit new rules at the top.
+#		    BEWARE: Hit count rules are not 100% reliable at present!!! Hit counts can be multiplied for multi IP objects.
+#		  - 'cl' mode rules now use the original global rule number instead of incrementing it by 1.
+#		  - The defaults for 'rr' mode rule builds have been changed - say no to ALL DEFAULTS to see new default options.
+#		  - Added 'log' defaults to 'rr' mode, this selects the same new defaults but chooses 'yes' in filter with logs.
+#		  - Nat rule dots printing is more frequent to give better visual output.
+#		  - Less dots are printed for log to rule matches in 'rr' mode.
+#		  - 'load' mode now doesnt try to load logs and nats from '.' when you skip loading these files
+#		  - Rules that are not logged with a rule number in checkpoint are now listed as rule 0 which hopefully resolves
+#		    the non numeric sort errors in 'rr' mode.
+# Version v0.4.2  - This release adds the 'cl' option to clean/filter original rules, in 'rr' mode, and allows output of service. 
+#		    priority rules as well as the original dst src priority rule build.
+#		  - The 'rr' mode menu has been simplified further
+#		  - Starting the script without any options now starts load mode to add at least one config.
+#		  - This release fixes a bug in the 'any' object matching, any will now be matched from logs.
+#		  - The rashfilter hash tree format has been changed to match the order of the other rule 
+#		    processing hashes: mergebase, filterbase and rulegroups, this should reduce memory use slightly.
+# Version v0.4.1  - This release adds the 'mergelog' mode.  This mode allows you to add binary log entries from one
+#		    config with another, this does not update the information output by 'print' mode but does update
+#		    the binary log information used by 'rr' mode.
+#		  - This release also significantly updates the user interface.  You can now choose options using an
+#		    option number instead of the text value.
+#		  - Help is no longer printed if you start the script without any options.  This allows all configs to 
+#		    be loaded from the 'load' menu instead of specifying them on the command line.
+#		  - Added 'verbose' switches to 'print' and 'rr' modes so that screen output can be switches off.
+#		  - The netscreen output stage now uses a default zone if none are specified.
+#		  - Also, all 'end.' key words have been changed to simply '.' to reduce the number of keystrokes needed
+#		    for each rationalization. Entering '0' now adds all options and '.' chooses the default if availble.
+# Version v0.4.0  - This release changes the command line options and permits you to process as many configs as you choose
+#		  - Some MIP functionality was fixed in the Netscreen Reader sections.
+#		  - All config reading and processing has been refactored into subroutines.
+#		  - Three new modes have been added:
+#		    'load' mode allows you to load new config bundles into an already running instance of 360-FAAR
+#		    'copylog' mode associates a log file from one config with another loaded or new config.
+#		    'help' mode prints info about all of the other modes
+#		    Undefined warnings have been resolved when using CTRL-C to exit the user loop.
+# Version v0.3.9  - release permits you to to choose they types of rules and which rule actions to include in the 
+#		    rule rationalization mode.  Both the 'merge from' and 'filter' rulebases rule types can be chosen.
+#		  - The 'rr' mode rule unwrap code has been optimized.
+# Version v0.3.8  - This release adds Cisco ASA 8.3+ object NAT to the cisco reader section for static and dynamic NAT.
+#		    Network objects, ranges and IPs are translated - groups are not presently translated.
+#		  - Runnig the script with '--help' or '-h' or 'h' in the first arguement now prints the simple help screen.
+#		  - Two new options have been added to the 'rr' mode filters, to allow encryption rules from the merge from and to
+#		    rulebases to be used to mask later rules in the merge from rulebase.
+#		  - Matches output during 'rr' mode filtering are now listed using the source config bundle object names instead of 
+#		  - the binary CIDR IP's.
+# Version v0.3.7  - This release fixes many of the bugs in the cisco reader and writer sections, 
+#		    so that cisco configs can now be processed written, read processed and written again cyclicly
+#		  - Access lists using proto groups, specifying only protocol details or using 'any' services are now handled.
+#		  - Protocol group-objects are written and used in rules for service groups with different protocols specified within them.
+#		  - port-object's are read in service objects, service groups and protocol groups alike.
+#		  - The cisco 'echo' default service has been updated to remove tcp and udp from its listed ports.
+# Version v0.3.6  - This release resolves many of the problems with the filter sections, many of the undefined warnings are resolved.
+#		  - Both the speciffic and the subnet 'rr' mode filter sections have been upgraded to fix many of the issues related to 
+#		    combining various filter mode types, and the filters behaviour should be much more predictable.
+#		  - The Cisco and od outut section definitions now print service defs for all defined proto types
+# Version v0.3.5  - This release introduces three new sub routines that are used to run much stronger consistency checks against the 
+#		    internal network and service object, group and rule definitions after each round of processing.  These new tests 
+#		    provide much greater visibility of incomplete objects and rules and give details of any missing object elements.
+#		  - The netscreen reader now reads "interface dip" and rule "dip-id" statements and adds appropriate objects 
+#		    and nat translation rules.
+#		  - Warnings are printed for unknown cisco object group-objects found in policies during the config read.
+#		  - NAT SRC DST translations in 'rr' mode now support range objects using the range start address only and network 
+#		    objects are now translated to their network CIDR rather than the full binary IP.
+#		  - Various other updates to resolve "undefined" warnings
+# Version v0.3.4  - This release resolves Cisco ICMP default services with out printing stringified hash references in the cs output
+#		  - Also Cisco network and range objects are listed as such in object-groups instead of as hosts
+#		  - The cisco output writer uses 'object' in access-lists instead of IP NM, as well as listing range objects using 'range' 
+#		    in access-lists as well as groups.  I should probably just use 'object' but the key word is easily changed and 
+#		    IMHO it makes the polices more readable
+#		  - The NAT translation now supports SRC NAT translation for known network objects in rr mode filters
+# Version v0.3.3  - This release adds Cisco ASA static nat statements to the nats table for IP IP NM and access-list nats.
+#		  - The < and > range identifiers used in ports are now striped before printing out Netscreen policies in rr mode.
+#		  - Some of the undefined warnings have been resolved
+# Version v0.3.2  - This release reads Netscreen interface vip statements and adds them to the NATs table
+#		  - The Cisco internal rule object type definitions that are added to rulebases built from ASA or PIX configs
+#		    have been corrected - these definitions are not used for anything yet.
+#		  - Further consistency checks have been added to the policy build sections to more easily identify problem objects.
+#		  - The NEW helper script htmlprintcsv.pl converts the 'print' mode output CSV file to HTML, run the script for info.
+# Version v0.3.1  - This release cleans up the output in the new columns, so that speciffic VPN and negation usage is easier to see.
+#		    The Cisco ASA/PIX reader has been upgraded so that it prints more user friendly info during the config read
+#		    and handles rules using protocol groups far better than before.  
+#		  - The cisco config reader now also correctly reads negated source and dest services.
+# Version v0.3.0  - This release further updates the 'print' and 'fltprint' mode spreadsheets to include VPN tunnel usage info
+#		    and source / destination negation from the policy as well as "install on" info.
+#		    'print' modes now include most all of the "important" details pulled from the configs and logs.
+# Version v0.2.9  - This release further upgrades the NAT analysis capabilities, more NAT details are listed in 'print' mode
+# Version v0.2.8  - This release adds new columns to the 'print' mode spreadsheets to list the policy and log NAT translations.
+#		    The NAT rule processing is further updated to include log and policy information in the network objects.
+# Version v0.2.7  - This release completely dropps the previous NAT methodology and integrates NATs into the rule processing subs 
+#		    and also sports a rewrite of the NAT structures and nat rule processing, this new method is much more robust
+#		  - Negated rules are now identified in Netscreen and excluded from rr mode rulebases
+# Version v0.2.6  - Corrected MIP interface NAT ANY service name and added nat dst ip statements to NATs tables
+#		  - Correctly reads disabled rules in netscreen and adds further checks to the rr mode rulebase builters
+#		  - Netscreen reader now reads tunnel vpn rules
+# Version v0.2.5  - Added 'end.' comments to rr mode "enter search INC EX string" instructions
+#		  - Added 'exit' to menu and tried to resolve looping issue when using CTRL-c ...did it work?
+#		  - This release also resolves netscreen MIP(ipaddr) objects from interface mip statements and adds them to the NATs
+#		  - Issues resolved: incorrect protocol definitions (used when merging between checkpoint - netscreen) are skipped,
+#		    and unknown rule types are skipped and reported - e.g. netscreen tunnel rules
+# Version v0.2.4  - Further updates the cisco policy writer and resolves issues with service group access lists
+#		  - This release also resolves a few cisco reader bugs that printed undefined warnings
+# Version v0.2.3  - Further updates to dbedit output - od mode now outputs object and service groups
+#		  - Dbedit output is also now printed straight to file 
+# Version v0.2.2  - Added object output to dbedit text in od mode, and NOTE: statements to the policy reader sections.
+#		  - net and service_builder subs now catch and report circular groups and sub groups
+#		  - fixed several bugs in cisco object, group and rule readers and writers
+#		  - changed proto port and toZone fromZone divider character from . to ~
+# Version v0.2.1  - Removed default service definitions that were not recognised in FW-1 r75.10 and caused dbedit policy build to fail.
+# Version v0.2.0  - Changed project status to BETA - feedback needed!!!
+#		  - Signigicantly upgraded the cisco object readers and writers and added more object checks to the netscreen and odumper
+#		    readers, plus fixed the policy src print field and many other bugs
+# Version v0.1.9  - Log to binary log conversion now writes log and rule usage hits to netobjects and 'print' mode prints this info
+#		  - The log object resolution matches to the most specific CIDR range, to properly match traffic to rules use 'rr' mode
+#		  - Print mode also now lists src and dst service associations from rules for each object
+# Version 0.1.8.1 - Updated netscreen obj reader to flag DNS names in set address cmd's and capture service timeout cmd's
+#		  - Thanks to M.T. for flagging these issues so concicely!! Let me know if you want your name here if you read this.
+# Version v0.1.8  - Added cisco policy output subroutine and sub groups to cisco reader
+# Version 0.1.7.1 - Fixed underfined warning in checkpoint log file reader for logs without service_id field.
+# Version v0.1.7  - Fixed autovivication problem in bin log zone check, rule comments on original filtered rules, netscreen
+#		    Any object name fixed, cisco apen protocol rules improved, add_srvc protocol issue fixed and log reader added.
+# Version v0.1.6  - Bug Fixed and improved 'print' mode, fixed duplicate issue in cs mode, and many more bugs fixed in 
+#		    in the cisco asa rule reading, as well as fixing misses in the binary log translation service matches.
+#		  - the improved print mode gives object duplicates, supernets, subnets, hosts on nets, rule obj usage etc.
+#		  - Added the 'fltprint mode', that filters the object analysis spreadsheet as its output
+# Version v0.1.5  - ASA/PIX reader working well, new 'print' mode working, better named and organised subs
+#		  - print mode is a little noisy (warnings) but the warnings are for window dressing that is missing
+# Version v0.1.3  - better bldobj mode and notes and zone mappings sorted in netscreen out, and groups translated
+#                 - service groups translated and odumper service group field spelling corrected.
+
+
+
+#===================================================================================================
+#---------------------------------------------------------------------------------------------------
+# LICENSE INFORMATION AND DISCLAIMERS
+#---------------------------------------------------------------------------------------------------
+#===================================================================================================
+
+
+
+#---------------------------------------------------------------------------------------------------
+# This program is writen and supported by Dan Martin, Director of 360 Analytics Ltd. 
+#---------------------------------------------------------------------------------------------------
+# www.360-faar.com dan@360-faar.com +44 7960 028 070 <- no one has ever called me on this number
+#---------------------------------------------------------------------------------------------------
+#
+#  Copyright (C) 2009-2015  Dan Martin
+#
+#   This program is open source software but it is not free software: you cannot redistribute it,
+#    and/or modify it, and/or use it without a license agreement from 360 Analytics Limited. 
+#
+#    To obtain this, mail dan@360-faar.com or use the contact form at: 
+#      https://www.360-faar.com/contact
+#
+#    This program is distributed in the hope that it will be useful, and so that its code can be
+#    evaluated, but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+#
+#   TERMS AND CONDITIONS
+#
+#    0. Definitions.
+#
+#   “This License”  refers to the demo license provided herin for the purpose of evaulatng the code 
+#		    of 360 SuperFAAR
+#   “Copyright”     also means copyright-like laws that apply to other kinds of works, 
+#                   such as semiconductor masks.
+#   “The Program”   refers to any copyrightable work licensed under this License. Each licensee is 
+#                   addressed as “you”. “Licensees” and “recipients” may be individuals or 
+#                   organizations.
+#   To “modify”     a work means to copy from or adapt all or part of the work in a fashion requiring 
+#                   copyright permission, other than the making of an exact copy. The resulting work 
+#                   is called a “modified version” of the earlier work or a work “based on” the earlier 
+#                   work.  A “covered work” means either the unmodified Program or a work based on the 
+#                   Program.
+#   To “propagate”  a work means to do anything with it that, without permission, would make you directly 
+#                   or secondarily liable for infringement under applicable copyright law, except 
+#                   executing it on a computer or modifying a private copy. Propagation includes copying, 
+#                   distribution (with or without modification), making available to the public, and 
+#                   in some countries other activities as well.
+#   To “convey”     a work means any kind of propagation that enables other parties to make or receive 
+#                   copies.  Mere interaction with a user through a computer network, with no transfer 
+#                   of a copy, is not conveying.
+#
+#  An interactive user interface displays “Appropriate Legal Notices” to the extent that it includes 
+#  a convenient and prominently visible feature that (1) displays an appropriate copyright notice, 
+#  and (2) tells the user that there is no warranty for the work (except to the extent that warranties 
+#  are provided), that licensees may convey the work under this License herin. If the interface 
+#  presents a list of user commands or options, such as a menu, a prominent item in the list meets 
+#  this criterion.
+#
+#    1. Source Code.
+#
+#  This program is open source software but it is not free software: you cannot redistribute it,
+#  and/or modify it, and/or propagate it, and/or convey it, and/or use it in any way or form except
+#  for the purpose of code evaluation and nothing else. 
+#
+#    2. Disclaimer of Warranty.
+#
+#  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN 
+#  OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM 
+#  “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED 
+#  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE 
+#  RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM PROVE 
+#  DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+#
+#    3. Limitation of Liability.
+#
+#  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY COPYRIGHT HOLDER, 
+#  OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU 
+#  FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF 
+#  THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING 
+#  RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO 
+#  OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE 
+#  POSSIBILITY OF SUCH DAMAGES.
+#
+#  END OF TERMS AND CONDITIONS
+

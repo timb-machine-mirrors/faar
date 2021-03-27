@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XML_DIZ_INFO>
+	<MASTER_PAD_VERSION_INFO>
+		<MASTER_PAD_VERSION>3.10</MASTER_PAD_VERSION>
+		<MASTER_PAD_EDITOR>Online PAD Generator 1.33 - http://www.padbuilder.com</MASTER_PAD_EDITOR>
+		<MASTER_PAD_INFO>Portable Application Description, or PAD for short, is a data set that is used by shareware authors to disseminate information to anyone interested in their software products. To find out more go to http://www.asp-shareware.org/pad</MASTER_PAD_INFO>
+	</MASTER_PAD_VERSION_INFO>
+	<Company_Info>
+		<Company_Name>360 Analytics Ltd.</Company_Name>
+		<Address_1>LUTIDINE HOUSE, </Address_1>
+		<Address_2>NEWARK LANE,</Address_2>
+		<City_Town>RIPLEY,  </City_Town>
+		<State_Province>SURREY,</State_Province>
+		<Zip_Postal_Code>GU23 6B</Zip_Postal_Code>
+		<Country>UNITED KINGDOM, </Country>
+		<Company_WebSite_URL>www.360-analysis.com</Company_WebSite_URL>
+		<Contact_Info>
+			<Author_First_Name>Dan</Author_First_Name>
+			<Author_Last_Name>Martin</Author_Last_Name>
+			<Author_Email>dan@360analytics.co.uk</Author_Email>
+			<Contact_First_Name>Dan</Contact_First_Name>
+			<Contact_Last_Name>Martin</Contact_Last_Name>
+			<Contact_Email>dan_l_martin@hotmail.com</Contact_Email>
+		</Contact_Info>
+		<Support_Info>
+			<Sales_Email>sales@360analytics.co.uk</Sales_Email>
+			<Support_Email>dan@360analytics.co.uk</Support_Email>
+			<General_Email>info@360analytics.co.uk</General_Email>
+			<Sales_Phone>+447960028070</Sales_Phone>
+			<Support_Phone>+447960028070</Support_Phone>
+			<General_Phone>+447960028070</General_Phone>
+			<Fax_Phone />
+		</Support_Info>
+	</Company_Info>
+	<Program_Info>
+		<Program_Name>360-FAAR Firewall Analysis Audit Repair</Program_Name>
+		<Program_Version>0.6</Program_Version>
+		<Program_Release_Month>2</Program_Release_Month>
+		<Program_Release_Day>4</Program_Release_Day>
+		<Program_Release_Year>2012</Program_Release_Year>
+		<Program_Cost_Dollars />
+		<Program_Cost_Other_Code />
+		<Program_Cost_Other />
+		<Program_Type>Freeware</Program_Type>
+		<Program_Release_Status>Alpha</Program_Release_Status>
+		<Program_Install_Support />
+		<Program_OS_Support>Android,BlackBerry,Handheld/Mobile Other,iPhone,iPod,iTouch,Linux,Linux Console,Linux Gnome,Linux GPL,Linux Open Source,Mac OS X,Mac Other,MS-DOS,Netware,OpenVMS,Palm,Pocket PC,Symbian,Unix,Win2000,Win7 x32,Win7 x64,Win98,WinMobile,WinOther,WinServer,WinVista,WinVista x64,WinXP,Other</Program_OS_Support>
+		<Program_Language>English</Program_Language>
+		<Program_Change_Info>New Menu</Program_Change_Info>
+		<Program_Specific_Category>Utilities</Program_Specific_Category>
+		<Program_Category_Class>Network &amp; Internet::Network Monitoring</Program_Category_Class>
+		<Program_Categories>Firewall Analysis</Program_Categories>
+		<Program_System_Requirements>Perl Compiler</Program_System_Requirements>
+		<File_Info>
+			<File_Size_Bytes>3200000</File_Size_Bytes>
+			<File_Size_K>3200.00</File_Size_K>
+			<File_Size_MB>3.3</File_Size_MB>
+		</File_Info>
+		<Expire_Info>
+			<Has_Expire_Info>N</Has_Expire_Info>
+			<Expire_Count />
+			<Expire_Based_On />
+			<Expire_Other_Info />
+			<Expire_Month />
+			<Expire_Day />
+			<Expire_Year />
+		</Expire_Info>
+	</Program_Info>
+	<Program_Descriptions>
+		<English>
+			<Keywords>security,firewall,log analysis,policy,rulebase,checkpoint,fw1,netscreen,cisco,asa,dbedit,screenos,firewall analysis,policy analysis,rulebase analysis,log </Keywords>
+			<Char_Desc_45>360-FAAR Rebuilds Firewall Configs Offline</Char_Desc_45>
+			<Char_Desc_80>360-FAAR Rebuilds FW1 and Netscreen Policies Offline Using Config/Logs</Char_Desc_80>
+			<Char_Desc_250>Offline Periodic Security and Infrastructure management program.  It can read Checkpoint FW1 (in odumper format) configurations and Netscreen ScreenOS policies and compare them to logexports and syslogs (Cisco to come)</Char_Desc_250>
+			<Char_Desc_450>Offline Periodic Security and Infrastructure management program.  It can read Checkpoint FW1 (in odumper format) configurations and Netscreen ScreenOS policies and compare them to logexports and syslogs (Cisco to come),  360-FAAR allows you to use both inclusive and exclusive CIDR filters, permitting you to filter large rulebases into smaller ones for virutalisation at the same time as removing unused connectivity.</Char_Desc_450>
+			<Char_Desc_2000>Offline Periodic Security and Infrastructure management program.  It can read Checkpoint FW1 (in odumper format) configurations and Netscreen ScreenOS policies and compare them to logexports and syslogs (Cisco to come),  360-FAAR allows you to use both inclusive and exclusive CIDR filters, permitting you to filter large rulebases into smaller ones for virutalisation at the same time as removing unused connectivity.  Its internal binary processing and comprehensive default list permits comparison of the configurations across manufacturers.  The process performs object translation, rulebase reordering and simplification, rule moves and duplicate matching automatically. Allowing you to seamlessly move rules to where you need them.  The output of 360-FAAR is the firewalls native language: currently Checkpoint FW1 dbedit and Netscreen ScreenOS6 are supported. </Char_Desc_2000>
+		</English>
+	</Program_Descriptions>
+	<Web_Info>
+		<Application_URLs>
+			<Application_Info_URL>https://sourceforge.net/projects/faar/files/Docs/</Application_Info_URL>
+			<Application_Order_URL>https://sourceforge.net/projects/faar/files/latest/download?source=files</Application_Order_URL>
+			<Application_Screenshot_URL>https://sourceforge.net/projects/faar/screenshots/Running-360-FAAR.jpg</Application_Screenshot_URL>
+			<Application_Icon_URL>https://sourceforge.net/p/faar/icon</Application_Icon_URL>
+			<Application_XML_File_URL>https://sourceforge.net/projects/faar/files/XML</Application_XML_File_URL>
+		</Application_URLs>
+		<Download_URLs>
+			<Primary_Download_URL>https://sourceforge.net/projects/faar/files/360-FAAR/</Primary_Download_URL>
+			<Secondary_Download_URL>http://www.360analytics.co.uk/360faar/</Secondary_Download_URL>
+			<Additional_Download_URL_1>http://www.360-analysis.com</Additional_Download_URL_1>
+			<Additional_Download_URL_2 />
+		</Download_URLs>
+	</Web_Info>
+	<Permissions>
+		<Distribution_Permissions>360-FAAR (Firewall Analysis, Audit, and Repair)
+This program is by Dan Martin of 360 Analytics Ltd. 
+www.360analytics.co.uk 
+dan@360analytics.co.uk 
++44 7960 028 070
+Its purpose is to provide detailed analysis of a firewalls configuration by combining logs and config
+
+Copyright (C) 2009-2013  Dan Martin
+
+ This program is free software: you can redistribute it
+  and/or modify it under the terms of the GNU General 
+  Public License as published by the Free Software 
+  Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+ This program is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the 
+  implied warranty of MERCHANTABILITY or FITNESS FOR A 
+  PARTICULAR PURPOSE.  See the GNU General Public 
+  License for more details.
+
+ You should have received a copy of the GNU General
+  Public License along with this program.  
+  If not, see &lt;http://www.gnu.org/licenses/>.</Distribution_Permissions>
+		<EULA>360-FAAR (Firewall Analysis, Audit, and Repair)
+This program is by Dan Martin of 360 Analytics Ltd. 
+www.360analytics.co.uk 
+dan@360analytics.co.uk 
++44 7960 028 070
+Its purpose is to provide detailed analysis of a firewalls configuration by combining logs and config
+
+Copyright (C) 2009-2013  Dan Martin
+
+ This program is free software: you can redistribute it
+  and/or modify it under the terms of the GNU General 
+  Public License as published by the Free Software 
+  Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+ This program is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the 
+  implied warranty of MERCHANTABILITY or FITNESS FOR A 
+  PARTICULAR PURPOSE.  See the GNU General Public 
+  License for more details.
+
+ You should have received a copy of the GNU General
+  Public License along with this program.  
+  If not, see &lt;http://www.gnu.org/licenses/>.</EULA>
+	</Permissions>
+</XML_DIZ_INFO>
